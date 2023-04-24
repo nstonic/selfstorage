@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои заказы{% endblock %}
+{% load static %}
+{% block content %}
+<main class="container mt-header">
+	<div class="row" role="tablist">
+		<div class="col-lg-3 d-flex flex-column nav nav-pills">
+			<button class="ps-0 btn bg-white fs_24 shadow-none SelfStorage_orange SelfStorage_tab active" id="LK-tab" data-bs-toggle="pill" data-bs-target="#LK" type="button" role="tab" aria-controls="LK" aria-selected="true">Личный кабинет</button>
+			<button class="ps-0 btn bg-white fs_24 shadow-none SelfStorage_grey SelfStorage_tab" id="Rent-tab" data-bs-toggle="pill" data-bs-target="#Rent" type="button" role="tab" aria-controls="Rent" aria-selected="false">Моя аренда</button>
+			<a href="{% url 'faq' %}" class="btn fs_24 shadow-none text-decoration-none SelfStorage_grey SelfStorage_tab">FAQ</a>
+			<a href="{% url 'logout' %}" class="btn fs_24 shadow-none text-decoration-none SelfStorage_grey SelfStorage_tab">Выйти</a>
+		</div>
+		<div class="col-lg-9">
+			<div class="card tab-content p-5">
+				<div class="tab-pane fade show active" id="LK" role="tabpanel" aria-labelledby="LK-tab">
+					<div class="row">
+						<div class="col-12 col-sm-5 d-flex flex-column align-items-center">
+							<h4>{{ user.first_name }} {{ user.last_name }}</h4>
+              {% if not user.avatar %}
+							  <img src="{% static 'avatars/cat.png'%}" class="rounded-pill mb-3" alt="" width="180px" height="180px">
+              {% else %}
+							  <img src="{{ user.avatar.url }}" class="rounded-pill mb-3" alt="" width="180px" height="180px">
+              {% endif %}
+              <form method="post" enctype="multipart/form-data" name="image_form">
+                 {% csrf_token %}
+                <input type="file" name="profile_image" accept="image/*" onchange="document.image_form.submit()">
+              </form>
+						</div>
+						<div class="col-12 col-sm-7 d-flex flex-column">
+                          {% if messages %}
+                            {% for message in messages %}
+                            <div class="alert {{ message.tags }} m-2" id="msg" role="alert">
+                              {{ message }}
+                            </div>
+                            {% endfor %}
+                          {% endif %}
+                            <form method="post">
+                              {% csrf_token %}
+                            {% for field in profile_form %}
+                              <label class="fs_24 SelfStorage_green ms-2" for="{{ field.auto_id }}">{{ field.label }}</label>
+                              {{ field }}
+                            {% endfor %}
+                            <button type="submit" class="btn SelfStorage_green ps-1" id="save" style="display: none">Сохранить</button>
+                            <a class="btn SelfStorage_orange ps-1" id="edit">Редактировать</a>
+                            <script>
+                                document.getElementById('edit').addEventListener('click', e => {
+                                    e.preventDefault()
+                                    document.getElementById('EMAIL').disabled = false
+                                    document.getElementById('PHONE').disabled = false
+                                    document.getElementById('PASSWORD1').disabled = false
+                                    document.getElementById('PASSWORD2').disabled = false
+                                    document.getElementById('PASSWORD1').type = 'text'
+                                    document.getElementById('PASSWORD2').type = 'text'
+                                    document.getElementById('PASSWORD1').value = ''
+                                    document.getElementById('PASSWORD2').value = ''
+                                    document.getElementById('edit').style.display = 'none'
+                                    document.getElementById('save').style.display = 'inline-block'
+                                })
+                                document.getElementById('save').addEventListener('click', () => {
+                                    setTimeout(() => {
+                                        document.getElementById('EMAIL').disabled = true
+                                        document.getElementById('PHONE').disabled = true
+                                        document.getElementById('PASSWORD1').disabled = true
+                                        document.getElementById('PASSWORD2').disabled = true
+                                        document.getElementById('PASSWORD1').type = 'password'
+                                        document.getElementById('PASSWORD2').type = 'password'
+                                        document.getElementById('edit').style.display = 'inline-block'
+                                        document.getElementById('save').style.display = 'none'
+                                    }, 0)
+                                })
+                            </script>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="Rent" role="tabpanel" aria-labelledby="Rent-tab">
+                <h1 class="fw-bold SelfStorage_green mb-5">Добрый день, {{ user.first_name }}!</h1>
+                <a href="#" class="SelfStorage_orange">История аренды</a>
+                    {% for rent in rents %}
+                        {% if rent.status == "EXPIRED" %}
+                            <h4 class="SelfStorage_orange my-3">Срок Вашей аренды истёк :(<br>Вам необходимо продлить аренду или забрать вещи как можно скорее.</h4>
+                        {% elif rent.expire_soon %}
+                            <h4 class="SelfStorage_grey my-3">Срок Вашей аренды подходит к концу :(<br>Вы можете продлить аренду или забрать вещи до {{ rent.expired_at }} включительно.</h4>
+                        {% endif %}
+                        <div class="mb-5">
+                            <h4 class="SelfStorage_green">Мой склад</h4>
+                            <h4>{{ rent.box.storage.city }}, {{ rent.box.storage.street }}, {{ rent.box.storage.building }}</h4>
+                            <h4 class="SelfStorage_green">Мой бокс</h4>
+                            <h4>№ {{ rent.box.number }}</h4>
+                            <h4 class="SelfStorage_green">Срок аренды</h4>
+                            <h4>{{ rent.started_at }} - {{ rent.expired_at }}</h4>
+                            <div><button class="btn fs_24 px-5 py-3 text-white border-8 SelfStorage__bg_green SelfStorage__btn2_green mb-3" onclick="location.href='{% url 'boxes_on_storage' rent.box.storage.slug %}'">Продлить аренду</button></div>
+                            <div><button class="btn fs_24 px-5 py-3 text-white border-8 SelfStorage__bg_orange SelfStorage__btn2_orange mb-3" onclick="location.href='{% url 'send_qr' rent.id %}'">Открыть бокс</button></div>
+                            <a href="#" class="SelfStorage_orange">Нужна помощь?</a>
+                        </div>
+                    {% empty %}
+                        <h4 class="SelfStorage_grey my-5">У вас еще нет аренды :(<br>Но вы можете арендовать свой первый бокс  по  привлекательной цене прямо сейчас</h4>
+                        <div><button class="btn fs_24 px-5 py-3 text-white border-8 SelfStorage__bg_orange SelfStorage__btn2_orange mb-3" onclick="location.href='{% url 'storages' %}'" type="button">Арендовать бокс</button></div>
+                    {% endfor %}
+				</div>
+			</div>
+		</div>
+	</div>
+</main>
+{% endblock %}
