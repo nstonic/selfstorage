@@ -35,7 +35,10 @@ class RentQuerySet(QuerySet):
             select_related('client')
 
     def filter_active(self, client):
-        rents = self.filter(client__id=client.id, status__in=[Rent.EXPIRED, Rent.ACTIVE]).select_related('client')
+        rents = self.filter(
+            client__id=client.id,
+            status__in=[Rent.EXPIRED, Rent.ACTIVE]).\
+            select_related('client')
         for rent in rents:
             rent.expire_soon = rent.expired_at < now() + timedelta(days=1)
         return rents
@@ -52,14 +55,48 @@ class Rent(models.Model):
         (EXPIRED, 'Просрочена')
     ]
 
-    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='rents', verbose_name='Арендатор')
-    box = models.ForeignKey(Box, on_delete=models.SET_NULL, null=True, related_name='rents', verbose_name='Бокс')
-    box_price = models.DecimalField('Стоимость аренды в сутки', max_digits=10, decimal_places=2)
-    status = models.CharField('Статус', choices=STATUSES, max_length=20, default='ACTIVE')
-    started_at = models.DateTimeField('Начало аренды', default=now)
-    expired_at = models.DateTimeField('Окончание аренды', default=one_month_from_today)
-    closed_at = models.DateTimeField('Завершена', null=True, blank=True)
-    warning_sent_at = models.DateTimeField('Предупреждение отправлено', null=True, blank=True)
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='rents',
+        verbose_name='Арендатор'
+    )
+    box = models.ForeignKey(
+        Box,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='rents',
+        verbose_name='Бокс'
+    )
+    box_price = models.DecimalField(
+        'Стоимость аренды в сутки',
+        max_digits=10,
+        decimal_places=2
+    )
+    status = models.CharField(
+        'Статус',
+        choices=STATUSES,
+        max_length=20,
+        default='ACTIVE'
+    )
+    started_at = models.DateTimeField(
+        'Начало аренды',
+        default=now
+    )
+    expired_at = models.DateTimeField(
+        'Окончание аренды',
+        default=one_month_from_today
+    )
+    closed_at = models.DateTimeField(
+        'Завершена',
+        null=True,
+        blank=True
+    )
+
+    warning_sent_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
 
     objects = RentQuerySet.as_manager()
 

@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Min, Max
+
+from personal_account.views import my_rent_view
 from services.geocoder import find_closest_storage
 from django.conf import settings
 import requests
@@ -44,7 +46,7 @@ def index(request):
 
     total_boxes = closest_storage.boxes.all()
     free_boxes = closest_storage.get_free_boxes()
-    lowest_price = total_boxes.order_by('-price')[0].price
+    lowest_price = total_boxes.order_by('-price').first().price
 
     return render(request, 'index.html',
                   {'storage': closest_storage, 'free_boxes': len(free_boxes), 'total_boxes': len(total_boxes),
@@ -52,10 +54,15 @@ def index(request):
 
 
 def payment(request, box_id):
-    client = Client.objects.filter(email=request.user.email)
-    if not client:
-        return redirect('index')
-    return create_checkout_session(client.first(), box_id)
+    try:
+        email = request.user.email
+    except AttributeError:
+        return my_rent_view(request)
+    else:
+        client = Client.objects.filter(email=email)
+        if not client:
+            return redirect('index')
+        return create_checkout_session(client.first(), box_id)
 
 
 def storages(request):

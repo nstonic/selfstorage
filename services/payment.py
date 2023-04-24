@@ -1,6 +1,8 @@
 import stripe
 from django.conf import settings
 from django.shortcuts import redirect
+from django.urls import reverse
+
 from storage.models import Box
 
 
@@ -12,8 +14,7 @@ def create_checkout_session(client, box_id):
     response = stripe.Price.create(
         unit_amount=int(box.price)*100,
         product=settings.BOX_STRIPE_ID,
-        currency='rub',
-
+        currency='rub'
     )
     price_id = response['id']
 
@@ -27,8 +28,9 @@ def create_checkout_session(client, box_id):
             ],
             mode='payment',
             metadata={'client_id': client.id, 'box_id': box.id},
-            success_url='http://81.163.31.199/profile/',
+            success_url=reverse('my-rent'),
         )
     except Exception as e:
         print(str(e))
-    return redirect(checkout_session.url, code=303)
+    else:
+        return redirect(checkout_session.url, code=303)

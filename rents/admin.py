@@ -47,9 +47,9 @@ class RentAdmin(admin.ModelAdmin):
     def save_form(self, request, form, change):
         instance = form.save(commit=False)
         if not instance.closed_at and instance.expired_at < now() and not instance.status == Rent.CLOSED:
-            instance.status = 'EXPIRED'
+            instance.status = Rent.EXPIRED
         if not instance.box_price:
             instance.box_price = instance.box.price
-        if not instance.closed_at and instance.status == 'CLOSED':
+        if not instance.closed_at and instance.status == Rent.CLOSED:
             instance.closed_at = now()
         return form.save()
